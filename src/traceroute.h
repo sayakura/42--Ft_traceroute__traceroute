@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/03 20:51:22 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/22 17:13:01 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/26 22:07:03 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,38 +40,72 @@
 # define DATALEN 56
 # define BUF_SIZ 1024
 # define IP_SIZ 100
+# define IS_IPV4(ip) (ip == AF_INET)
+# define PRINT_ERROR(msg) ({fprintf(stderr, "%s\n", msg);})
+# define FETAL(msg) ({fprintf(stderr, "%s\n", msg); exit(EXIT_FAILURE);})
+# define ERR_PROMPT(cond, msg)({if(cond)PRINT_ERROR(msg);})
+# define ERR_QUIT(f) ({perror(f); exit(EXIT_FAILURE);})
+# define ERR_CHECK(cond, f) ({if(cond)ERR_QUIT(f);})
+# define RECV_TIMEOUT -1
+# define RECV_SUCCESS 1
+# define RECV_TTLEXCEED 2
+# define RECV_REACHED 3
+typedef struct s_proto
+{
+    int             level;
+    int             ttl_opt;
+    int             icmp_proto;
+
+}               t_proto;
 
 typedef struct  s_ping
 {
 	struct sockaddr *sserv;
 	int             sservlen;
-    
-    int             ttl;
     int             sockfd;
-    int             pid;
-    int             seq;
-    int             protocol;
-    void            (*send)(t_ping *);
-    void            (*recv)(t_ping *, double *rtt);
+    pid_t             pid;
+    void            (*send)(void);
+    void            (*recv)(void);
     char            sendbuff[BUF_SIZ];
     char            ip[IP_SIZ];
+    t_proto         *proto;
 }               t_ping;
 
-typedef struct  s_probe
+// typedef struct  s_probe
+// {
+//     bool        status;
+//     char        *host;
+//     char        *ip;
+//     double      rtt;
+// }               t_probe;
+
+// typedef struct  traceroute
+// {
+// 	struct sockaddr		*ssend;
+// 	int					ssendlen;
+// }               t_traceroute;
+
+typedef struct  s_config
 {
-    bool        status;
-    char        *host;
-    char        *ip;
-    double      rtt;
-}               t_probe;
+    int         max_ttl;
+    int         max_probe;
+    int         verbose;
+}               t_config;
 
-typedef struct  traceroute
-{
-	struct sockaddr		*ssend;
-	int					ssendlen;
-}               t_traceroute;
+t_config    g_config;
 
+t_ping      *g_ping;
+bool        g_timeout;
 
-t_ping      g_ping;
+t_proto     proto_v4 = {
+    IPPROTO_IP,
+    IP_TTL,
+    IPPROTO_ICMP
+};
 
+t_proto     proto_v6 = {
+    IPPROTO_IPV6,
+    IPV6_UNICAST_HOPS,
+    IPPROTO_ICMPV6
+};
 #endif
