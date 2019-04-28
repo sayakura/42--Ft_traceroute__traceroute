@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 21:43:38 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 21:44:12 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ uint16_t		in_cksum(uint16_t *addr, int len)
 void		send_v4()
 {
 	int				len;
+	int 			b_recv;
 	struct icmp		*icmp;
 
 	icmp = (struct icmp *)g_ping->sendbuff;
