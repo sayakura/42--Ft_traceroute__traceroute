@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 20:52:51 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 21:40:26 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,7 @@ void		send_v4()
 void		send_v6()
 {
 	int					len;
+	int					b_recv;
 	struct icmp6_hdr	*icmp;
 
 	icmp = (struct icmp6_hdr *)g_ping->sendbuff;
@@ -98,7 +99,8 @@ void		send_v6()
 	ERR_PROMPT(gettimeofday((struct timeval *)(icmp + 1), NULL) == -1,
 		"Failed to get timestamp for icmp6 packet.");
 	len = 8 + DATALEN;
-	sendto(g_ping->sockfd, g_ping->sendbuff, len, 0, g_ping->sserv, g_ping->sservlen);
+	b_recv = sendto(g_ping->sockfd, g_ping->sendbuff, len, 0, g_ping->sserv, g_ping->sservlen);
+	printf("sendto: %d\n", b_recv);
 }
 /*
 void		readmsg_v6(int b_read, char *recvbuff)
