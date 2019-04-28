@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 21:40:26 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 21:43:38 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,8 +80,9 @@ void		send_v4()
 		"Failed to get timestamp for icmp packet.");
 	len = 8 + DATALEN;
 	icmp->icmp_cksum = 0;
-	icmp->icmp_cksum = in_cksum((u_short *)icmp, len);
-	sendto(g_ping->sockfd, g_ping->sendbuff, len, 0, g_ping->sserv, g_ping->sservlen);
+	icmp->icmp_cksum = in_cksum((u_short *)icmp, len);	
+	b_recv = sendto(g_ping->sockfd, g_ping->sendbuff, len, 0, g_ping->sserv, g_ping->sservlen);
+	printf("sendto: %d\n", b_recv);
 }
 
 void		send_v6()
