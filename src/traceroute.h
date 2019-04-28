@@ -68,7 +68,8 @@ typedef struct  s_ping
     void            (*send)(void);
     int             (*recv)(struct timeval *);
     char            sendbuff[BUF_SIZ];
-    char            ip[IP_SIZ];
+    char	    *ip;
+    char            this_ip[IP_SIZ];
     char            last_ip[IP_SIZ];
     t_proto         *proto;
 }               t_ping;
@@ -99,10 +100,10 @@ t_config    g_config;
 t_ping      *g_ping;
 // bool        g_timeout;
 
-t_proto     proto_v4 = {
-    IPPROTO_IP,
-    IP_TTL,
-    IPPROTO_ICMP
+t_proto     proto_v4 = (t_proto){
+    .level = IPPROTO_IP,
+    .ttl_opt = IP_TTL,
+    .icmp_proto = IPPROTO_ICMP
 };
 
 t_proto     proto_v6 = {
