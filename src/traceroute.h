@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/03 20:51:22 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 17:22:59 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 20:50:00 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,10 +100,10 @@ t_config    g_config;
 t_ping      *g_ping;
 // bool        g_timeout;
 
-t_proto     proto_v4 = (t_proto){
-    .level = IPPROTO_IP,
-    .ttl_opt = IP_TTL,
-    .icmp_proto = IPPROTO_ICMP
+t_proto     proto_v4 = {
+    IPPROTO_IP,
+    IP_TTL,
+    IPPROTO_ICMP
 };
 
 t_proto     proto_v6 = {

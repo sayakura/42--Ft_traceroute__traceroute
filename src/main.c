@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 18:38:50 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 20:52:51 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,8 +145,11 @@ int			readmsg_v4(struct timeval *tvrecv)
 				continue ;
 			else if (errno == ETIMEDOUT)
 				return (RECV_TIMEOUT);
-			else 
+			else
+			{
+				printf("%d\n", errno);
 				ERR_QUIT("recvfrom");
+			}
 		}
 		iphdr = (struct ip *)recvbuff;
 		hdrlen = iphdr->ip_hl << 2;
