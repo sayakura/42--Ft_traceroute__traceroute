@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/03 20:51:22 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/26 22:07:03 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 17:22:59 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@
 # define RECV_SUCCESS 1
 # define RECV_TTLEXCEED 2
 # define RECV_REACHED 3
+
 typedef struct s_proto
 {
     int             level;
@@ -65,9 +66,10 @@ typedef struct  s_ping
     int             sockfd;
     pid_t             pid;
     void            (*send)(void);
-    void            (*recv)(void);
+    int             (*recv)(struct timeval *);
     char            sendbuff[BUF_SIZ];
     char            ip[IP_SIZ];
+    char            last_ip[IP_SIZ];
     t_proto         *proto;
 }               t_ping;
 
@@ -95,7 +97,7 @@ typedef struct  s_config
 t_config    g_config;
 
 t_ping      *g_ping;
-bool        g_timeout;
+// bool        g_timeout;
 
 t_proto     proto_v4 = {
     IPPROTO_IP,

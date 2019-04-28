@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/26 22:16:52 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/04/27 18:38:50 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ void		send_v4()
 	icmp->icmp_code = 0;
 	icmp->icmp_seq = 0;
 	memset(icmp->icmp_data, 0x77, DATALEN);
-	ERR_PROMPT(gettimeofday((struct timeval *)icmp->icmp_data, NULL) == -1,
+	ERR_PROMPT(gettimeofday((struct timeval *)icmp->icmp_data, NULL") ";== -1,
 		"Failed to get timestamp for icmp packet.");
 	len = 8 + DATALEN;
 	icmp->icmp_cksum = 0;
@@ -116,6 +116,7 @@ int			readmsg_v4(struct timeval *tvrecv)
 	struct ip		*iphdr;
 	struct icmp		*icmp;
 	struct timeval	tvrecv;
+	char			*tmp_ip;
 	char			recvbuff[BUF_SIZ];
 	int				len;
 	int				hdrlen;
@@ -123,19 +124,16 @@ int			readmsg_v4(struct timeval *tvrecv)
 	int 			ret;
 	double			rrt;
 
-
-	g_timeout = false;
-	alarm(3);
-	while(true)
+	while (true)
 	{
-		if (g_timeout)
-			return (RECV_TIMEOUT);
 		len = g_ping->sservlen;
 		n = recvfrom(g_ping->sockfd, recvbuff, sizeof(recvbuff), 0, g_ping->sserv, &len);
 		if (n < 0)
 		{
 			if (errno == EINTR)
 				continue ;
+			else if (errno == ETIMEDOUT)
+				return (RECV_TIMEOUT);
 			else 
 				ERR_QUIT("recvfrom");
 		}
@@ -144,23 +142,22 @@ int			readmsg_v4(struct timeval *tvrecv)
 		if (iphdr->ip_p != IPPROTO_ICMP || (b_read - hdrlen) < 8)
 			continue ;
 		icmp = (struct icmp *)(recvbuff + hdrlen);
-		if (icmp->icmp_type == ICMP_ECHOREPLY)
+		if (icmp->icmp_type == ICMP_ECHOREPLY || 
+			(icmp->icmp_type == ICMP_TIMXCEED && icmp->icmp_code == ICMP_TIMXCEED_INTRANS))
 		{
 			if (icmp->icmp_id != gl.pid || (b_read - hdrlen) < 16)
 				continue ;
 			tv_sub(tvrecv, (struct timeval *)icmp->icmp_data);
-			ret = RECV_REACHED;
-		}
-		else if (icmp->icmp_type == ICMP_TIMXCEED
-		&& icmp->icmp_code == ICMP_TIMXCEED_INTRANS)
-		{
-			if (icmp->icmp_id != gl.pid || (b_read - hdrlen) < 16)
-				continue ;	
-			tv_sub(tvrecv, (struct timeval *)icmp->icmp_data);
-			ret = RECV_REACHED;
+			if (icmp->icmp_type == ICMP_ECHOREPLY)
+				ret = RECV_REACHED;
+			else
+			{	
+				tmp_ip = inet_ntoa((struct in_addr *)iphdr->saddr);
+				strcmp(g_ping->this_ip, tmp_ip);
+				ret = RECV_TTLEXCEED;
+			}
 		}
 	}
-	alarm(0);
 	gettimeofday(tvrecv, NULL);
 	return (ret);
 }
@@ -232,6 +229,7 @@ void				ping_init(char host)
 	g_ping->recv = IS_IPV4(ret->ai_family) ? readmsg_v4 : readmsg_v6;
 	g_ping->proto = IS_IPV4(ret->ai_family) ? &proto_v4 : &proto_v6;
 	inet_ntop(ret->ai_family, ptr, g_ping->ip, 100);
+	printf("%s\n", g_ping->ip);
 }
 
 int				sock_init()
@@ -249,7 +247,10 @@ int				sock_init()
 void                readloop(void)
 {
 	struct 	timeval tvrecv;
-	
+	double			rtt;
+	int				ret;
+	bool 			printed;
+
 	for (int ttl = 0; ttl < g_config.max_ttl; ttl++)
 	{
 		ERR_PROMPT(setsockopt(g_ping->sockfd, g_ping->proto->level,\
@@ -257,11 +258,36 @@ void                readloop(void)
 					"Failed to set ttl value for the socket.");
 		printf("%2d ", ttl);
 		fflush(stdout);
+		printed = false;
+		bzero(g_ping->last_ip, IP_SIZ);
 		for (int probe = 0; probe < g_config.max_probe; probe++)
 		{
 			g_ping->send();
-			g_ping->recv(&tvrecv);
+			ret = g_ping->recv(&tvrecv);
+			if (ret == RECV_TIMEOUT)
+				printf(" *");
+			else if(ret == RECV_TTLEXCEED ||
+					ret == RECV_REACHED)
+			{
+				if (!printed)
+				{
+					printf("%s ", g_ping->this_ip);
+					strcpy(g_ping->last_ip, g_ping->this_ip);
+					printed = 1;
+				}
+				else
+				{
+					if (strcmp(g_ping->this_ip, g_ping->last_ip) != 0)
+						printf("\n    %s ", g_ping->this_ip);	
+				}
+				rtt = tvrecv.tv_sec * 1000.0 * tvrecv.tv_usec / 1000.0;
+				printf(" %3f", rtt);
+			}
 		}
+		fflush(stdout);
+		write(1, "\n", 1);
+		if (strcmp(g_ping->ip, g_ping->this_ip) == 0)
+			return ;
 	}
 
 	// host = reverse_dns_lookup(ping->ip);
@@ -287,8 +313,9 @@ int					main(int ac, char **av)
 
 	g_ping = &ping;
 	env_init();
-	readopt(ac, av);
-	ping_init();
+	//readopt(ac, av);
+	ping_init(av[1]);
+	sock_init();
 	readloop();
 	return (0);
 }
