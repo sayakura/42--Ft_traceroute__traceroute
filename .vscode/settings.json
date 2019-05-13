@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "traceroute.h": "c",
-        "stdlib.h": "c",
-        "string.h": "c"
-    }
-}
