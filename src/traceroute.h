@@ -5,110 +5,51 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/04/03 20:51:22 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 20:50:00 by qpeng            ###   ########.fr       */
+/*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
+/*   Updated: 2019/05/13 02:01:29 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PING_H
-# define PING_H
+#ifndef TRACEROUTE_H
+#define TRACEROUTE_H
 
-# include <stdio.h>
-# include <sys/types.h>
-# include <sys/socket.h>
-# include <arpa/inet.h>
-# include <unistd.h>
-# include <string.h>
-# include <stdlib.h>
-# include <netinet/ip_icmp.h>
-# include <time.h>
-# include <fcntl.h>
-# include <signal.h>
-# include <stdbool.h>
-# include <errno.h>
-# include <sys/time.h>
-# include <memory.h>
-# include <ifaddrs.h>
-# include <net/if.h>
-# include <stdarg.h>
-# include <resolv.h>
-# include <netdb.h>
-# include <netinet/in.h>
-# include <netinet/icmp6.h>
+#include <stdlib.h>
+#include <inttypes.h> // portable integer types
 
-# define HOP_LIMIT 30
-# define DATALEN 56
-# define BUF_SIZ 1024
-# define IP_SIZ 100
-# define IS_IPV4(ip) (ip == AF_INET)
-# define PRINT_ERROR(msg) ({fprintf(stderr, "%s\n", msg);})
-# define FETAL(msg) ({fprintf(stderr, "%s\n", msg); exit(EXIT_FAILURE);})
-# define ERR_PROMPT(cond, msg)({if(cond)PRINT_ERROR(msg);})
-# define ERR_QUIT(f) ({perror(f); exit(EXIT_FAILURE);})
-# define ERR_CHECK(cond, f) ({if(cond)ERR_QUIT(f);})
-# define RECV_TIMEOUT -1
-# define RECV_SUCCESS 1
-# define RECV_TTLEXCEED 2
-# define RECV_REACHED 3
+// macros
+#define GET_BIT(X,N) (((X) >> (N)) & 1)
+#define SET_BIT(X,N) ((X) | (1 << (N)))
+#define RST_BIT(X,N) ((X) & ~(1 << (N)))
 
-typedef struct s_proto
+// consts
+#define INITIAL_TTL 1
+#define MAX_TTL 30
+#define DEFAULT_PROBE 3
+#define DEFAULT_WAIT 5
+#define DEFAULT_PORT_NUM 33434
+#define NUM_OF(x) (sizeof (x) / sizeof (*x))
+
+enum    e_flags
 {
-    int             level;
-    int             ttl_opt;
-    int             icmp_proto;
-
-}               t_proto;
-
-typedef struct  s_ping
-{
-	struct sockaddr *sserv;
-	int             sservlen;
-    int             sockfd;
-    pid_t             pid;
-    void            (*send)(void);
-    int             (*recv)(struct timeval *);
-    char            sendbuff[BUF_SIZ];
-    char	    *ip;
-    char            this_ip[IP_SIZ];
-    char            last_ip[IP_SIZ];
-    t_proto         *proto;
-}               t_ping;
-
-// typedef struct  s_probe
-// {
-//     bool        status;
-//     char        *host;
-//     char        *ip;
-//     double      rtt;
-// }               t_probe;
-
-// typedef struct  traceroute
-// {
-// 	struct sockaddr		*ssend;
-// 	int					ssendlen;
-// }               t_traceroute;
-
-typedef struct  s_config
-{
-    int         max_ttl;
-    int         max_probe;
-    int         verbose;
-}               t_config;
-
-t_config    g_config;
-
-t_ping      *g_ping;
-// bool        g_timeout;
-
-t_proto     proto_v4 = {
-    IPPROTO_IP,
-    IP_TTL,
-    IPPROTO_ICMP
+    F_FLAGS = 0b00000001,
+    M_FLAGS = 0b00000010,
+    P_FLAGS = 0b00000100,
+    S_FLAGS = 0b00001000,
+    W_FLAGS = 0b00010000
 };
 
-t_proto     proto_v6 = {
-    IPPROTO_IPV6,
-    IPV6_UNICAST_HOPS,
-    IPPROTO_ICMPV6
-};
+/**
+ *  global variable for storing all the flags info.
+ *  0 = not used
+ *  |0|0|0|w|S|p|m|f|
+ *   8 7 6 5 4 3 2 1
+ */
+extern uint8_t g_flags;
+
+extern uint8_t g_inital_ttl;
+extern uint8_t g_max_ttl;
+extern uint8_t g_probes;
+extern uint8_t g_waittime;
+extern uint16_t g_port;
+extern char * g_hostname;
 #endif
