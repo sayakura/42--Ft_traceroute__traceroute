@@ -44,7 +44,7 @@ struct addrinfo		*host_to_addrinfo(char *host, int family, int socktype)
 	struct addrinfo hints;
 	struct addrinfo *res;
 
-    if (!host)
+    if (!*host)
         return (NULL);
 	bzero_(&hints, sizeof(struct addrinfo));
 	hints.ai_flags = AI_CANONNAME;
