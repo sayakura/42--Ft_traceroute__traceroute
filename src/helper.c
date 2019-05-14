@@ -54,10 +54,3 @@ struct addrinfo		*host_to_addrinfo(char *host, int family, int socktype)
         ? NULL
         : res;
 }
-
-void                dns_lookup(struct addrinfo *res, char **buff, uint16_t siz)
-{
-    if (getnameinfo(res->ai_addr, res->ai_addrlen, *buff, siz, NULL, 
-        0, 0) != 0)
-        *buff = NULL;
-}

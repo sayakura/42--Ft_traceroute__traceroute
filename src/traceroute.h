@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/13 15:57:31 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/14 08:07:13 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,9 @@
 #include <netinet/udp.h>
 #include <sys/types.h>
 #include <netdb.h>
+
+#include "libft.h"
+#include <unistd.h>
 
 // macros
 #define GET_BIT(X,N) (((X) >> (N)) & 1)
@@ -75,6 +78,5 @@ extern struct addrinfo      *g_addrinfo;
 extern int                  g_sendfd;
 extern int                  g_recvfd;
 extern bool                 g_alarmed;                 
-struct addrinfo		*host_to_addrinfo(char *host,\
-						const char *serv, int family, int socktype);
+struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
 #endif
