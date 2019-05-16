@@ -33,7 +33,8 @@ void 	creat_sock(void)
 	
 	serbind.sin_family = AF_INET;
 	serbind.sin_addr.s_addr = INADDR_ANY;
-	serbind.sin_port = htons(getpid() & 0xffff);
+	g_sport = getpid() & 0xffff;
+	serbind.sin_port = htons(g_sport);
 	if (bind(sendfd, (struct sockaddr *)(&serbind), sizeof(serbind)) == -1)
 		INFO("Bind failed.");
 	g_sendfd = sendfd;
@@ -61,10 +62,72 @@ void 	clean_up(void)
 	freeaddrinfo(g_addrinfo);
 }
 
+int		wait_and_recv(int seq, struct timeval *tv)
+{
+	int				ret;
+	ssize_t			b_read;
+	uint16_t		ip_out_len, ip_in_len, icmplen;
+	char			recvbuf[777];
+	struct ip 		*ip_hdr_out, *ip_hdr_in;
+	struct icmp 	*icmp_hdr;
+	struct udphdr 	*udp_hdr;
+
+	g_alarmed = false;
+	while (true)
+	{
+		if (g_alarmed)
+			return (ALARMED);// expired
+		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, sizeof(g_serrecv));
+		if (b_read < 0)
+		{
+			if (errno == EINTR)
+				continue ;
+			else
+				perror_("recvfrom");
+		}
+		ip_hdr_out = (struct ip *)recvbuf;
+		ip_out_len = ip_hdr_out->ip_hl << 2;
+
+		if ((icmplen = b_read - ip_out_len) < ICMP_HDR_LEN)
+			continue ; 
+		if (icmplen < ICMP_HDR_LEN + sizeof(struct ip))
+			continue ;
+		icmp_hdr = (struct icmp *)(recvbuf + ip_out_len);
+		
+		if (icmp_hdr->icmp_type == ICMP_TIMXCEED ||icmp_hdr->icmp_type == ICMP_UNREACH) 
+		{
+			ip_hdr_in = (struct ip *)(recvbuf + ip_out_len + ICMP_HDR_LEN);
+			ip_in_len = ip_hdr_in->ip_hl << 2;
+			if (icmplen < ICMP_HDR_LEN + ip_in_len + (UDP_HDR_LEN / 2))
+				continue ;
+
+			udp_hdr = (struct udphdr *)(recvbuf + ip_out_len + icmplen + ip_in_len);
+			if (ip_hdr_in->ip_p == IPPROTO_UDP
+				&& udp_hdr->uh_sport == htons(g_sport)
+				&& udp_hdr->uh_dport == htons(g_dport + seq))
+				return (icmp_hdr->icmp_code);
+		}
+		else 
+		{
+			//verbose
+			continue ;
+		}
+		alarm(0);
+		gettimeofday(tv, NULL);
+		return (ret);
+	}
+}
+
+
 void 	readloop(void)
 {
 	struct sockaddr_in 		serlast;
-	//char					sendbuf[1024];
+	struct s_content		*data;
+	struct timeval			recvtv;
+	u_int16_t				seq;
+	int						status;
+	char					sendbuf[777];
+	char					hostname[NI_MAXHOST];
 
 	for (u_int8_t ttl = g_inital_ttl; ttl < g_max_ttl; ttl++)
 	{
@@ -75,7 +138,27 @@ void 	readloop(void)
 		fflush(stdout);
 		for (uint8_t probe = 0; probe < g_probes; probe++)
 		{
-			//sendto(g_sendfd, )
+			data = (struct s_content *)(sendbuf);
+			data->seq = seq++;
+			data->ttl = ttl;
+			gettimeofday(&data->recv_time, NULL);
+			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = g_dport + seq;
+			sendto(g_sendfd, sendbuf, sizeof(sendbuf), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
+			status = wait_and_recv(seq, &recvtv);
+			if (status == ALARMED)
+				printf (" *");
+			else 
+			{
+				if (serlast.sin_addr.s_addr != ((struct sockaddr_in *)&g_serrecv)->sin_addr.s_addr)
+				{
+					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname, NI_MAXHOST, NULL, 0, 0) == 0)
+						printf("%s (%s)", hostname, ((struct sockaddr_in *)&g_serrecv)->sin_addr);
+					else
+						printf(" %s", ((struct sockaddr_in *)&g_serrecv)->sin_addr);
+				}
+				memcpy(&serlast, &g_serrecv, sizeof(struct sockaddr_in));
+			}
+			
 		}
 	}
 }

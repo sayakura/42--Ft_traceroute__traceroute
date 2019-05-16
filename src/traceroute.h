@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/14 08:07:13 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/16 10:19:44 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,9 @@
 #define TRACEROUTE_H
 
 #include <stdlib.h>
-#include <stdbool.h>
+#include <stdbool.h> // bool
 #include <inttypes.h> // portable integer types
-
+#include <sys/time.h> // gettimeofday
 #include <sys/socket.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -32,6 +32,7 @@
 #define GET_BIT(X,N) (((X) >> (N)) & 1)
 #define SET_BIT(X,N) ((X) | (1 << (N)))
 #define RST_BIT(X,N) ((X) & ~(1 << (N)))
+#define NUM_OF(x) (sizeof (x) / sizeof (*x))
 
 // consts
 #define INITIAL_TTL 1
@@ -39,15 +40,17 @@
 #define DEFAULT_PROBE 3
 #define DEFAULT_WAIT 5
 #define DEFAULT_PORT_NUM 33434
-#define NUM_OF(x) (sizeof (x) / sizeof (*x))
+#define ICMP_HDR_LEN 8
+#define UDP_HDR_LEN 8
+#define ALARMED -2
 
 enum    e_flags
 {
-    F_FLAGS = 0b00000001,
-    M_FLAGS = 0b00000010,
-    P_FLAGS = 0b00000100,
-    S_FLAGS = 0b00001000,
-    W_FLAGS = 0b00010000
+	F_FLAGS = 0b00000001,
+	M_FLAGS = 0b00000010,
+	P_FLAGS = 0b00000100,
+	S_FLAGS = 0b00001000,
+	W_FLAGS = 0b00010000
 };
 
 #define HAS_FLAG(name) name##_FLAGS & g_flags
@@ -59,6 +62,13 @@ enum    e_flags
 # define ERR_QUIT(f) ({perror_(f); exit(EXIT_FAILURE);})
 # define ERR_CHECK(cond, f) ({if(cond)ERR_QUIT(f);})
 
+// data content 
+struct  s_content
+{
+		uint16_t		seq;
+		uint16_t		ttl;
+		struct timeval	recv_time;
+};
 /**
  *  global variable for storing all the flags info.
  *  0 = not used
@@ -77,6 +87,9 @@ extern char                 g_rhostname[NI_MAXHOST];
 extern struct addrinfo      *g_addrinfo;
 extern int                  g_sendfd;
 extern int                  g_recvfd;
-extern bool                 g_alarmed;                 
+extern bool                 g_alarmed;
+extern uint16_t				g_sport;
+extern uint16_t 			g_dport;
+extern struct sockaddr		g_serrecv;
 struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
 #endif
