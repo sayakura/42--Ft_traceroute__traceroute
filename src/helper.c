@@ -24,21 +24,6 @@ uint16_t		in_cksum(uint16_t *addr, int len)
 	return (answer);
 }
 
-// char				*reverse_dns_lookup(char *ip_addr)
-// {
-// 	struct sockaddr_in	temp_addr;
-// 	socklen_t			len;
-// 	static char			ret_buf[NI_MAXHOST];
-
-// 	temp_addr.sin_family = AF_INET;
-// 	temp_addr.sin_addr.s_addr = inet_addr(ip_addr);
-// 	len = sizeof(struct sockaddr_in);
-// 	if (getnameinfo((struct sockaddr *)&temp_addr, len, ret_buf,
-// 					sizeof(ret_buf), NULL, 0, NI_NAMEREQD))
-// 	    return (ret_buf);
-//     return (NULL);
-// }
-
 struct addrinfo		*host_to_addrinfo(char *host, int family, int socktype)
 {
 	struct addrinfo hints;

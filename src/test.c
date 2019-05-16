@@ -14,6 +14,18 @@ int                 g_recvfd;
 
 void			readopt(int ac, char **av);
 
+
+
+void	tv_sub(struct timeval *out, struct timeval *in)
+{
+	if ((out->tv_usec -= in->tv_usec) < 0)
+	{
+		--out->tv_sec;
+		out->tv_usec += 1000000;
+	}
+	out->tv_sec -= in->tv_sec;
+}
+
 void 	creat_sock(void)
 {
 	uid_t				uid;
@@ -124,8 +136,9 @@ void 	readloop(void)
 	struct sockaddr_in 		serlast;
 	struct s_content		*data;
 	struct timeval			recvtv;
+	double					rtt;
 	u_int16_t				seq;
-	int						status;
+	int						code;
 	char					sendbuf[777];
 	char					hostname[NI_MAXHOST];
 
@@ -144,8 +157,8 @@ void 	readloop(void)
 			gettimeofday(&data->recv_time, NULL);
 			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = g_dport + seq;
 			sendto(g_sendfd, sendbuf, sizeof(sendbuf), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
-			status = wait_and_recv(seq, &recvtv);
-			if (status == ALARMED)
+			code = wait_and_recv(seq, &recvtv);
+			if (code == ALARMED)
 				printf (" *");
 			else 
 			{
@@ -158,9 +171,17 @@ void 	readloop(void)
 				}
 				memcpy(&serlast, &g_serrecv, sizeof(struct sockaddr_in));
 			}
-			
+			tv_sub(&recvtv , &data->recv_time);
+			rtt = recvtv.tv_sec * 1000.0 + recvtv.tv_usec / 1000.0;
+			printf(" %.3f ms", rtt);
+			if (code == ICMP_UNREACH_PORT)
+				break ;
+			else if (code != ICMP_TIMXCEED_INTRANS)
+				printf (" (ICMP %s)", code);
 		}
+		fflush(stdout);
 	}
+	printf("\n");
 }
 
 int		main(int ac, char **av)
@@ -168,6 +189,7 @@ int		main(int ac, char **av)
 	readopt(ac, av);
 	init();
 	creat_sock();
+	readloop();
 	clean_up();
 	return (0);
 }
