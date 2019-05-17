@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 
+#include <signal.h>
 #include "libft.h"
 #include <unistd.h>
 
@@ -96,4 +97,5 @@ extern struct sockaddr		g_serrecv;
 
 struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
 char						*code_tostring(int code);
+void                        sig_alrm(int signo);
 #endif

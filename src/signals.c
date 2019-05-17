@@ -17,6 +17,7 @@ bool                 g_alarmed;
 void    sig_alrm(int signo)
 {
     (void)signo;
+    printf("kicks in!\n");
     g_alarmed = true;    
     return ;
 }

@@ -10,14 +10,13 @@ uint8_t 			g_max_ttl;
 uint8_t 			g_probes;
 uint8_t 			g_waittime;
 uint16_t			g_port;
+bool                g_alarmed;
 char				g_rhostname[NI_MAXHOST];
 struct addrinfo		*g_addrinfo;
 struct sockaddr		g_serrecv;
 int                 g_recvfd;
 
 void			readopt(int ac, char **av);
-
-
 
 void	tv_sub(struct timeval *out, struct timeval *in)
 {
@@ -44,11 +43,11 @@ void 	creat_sock(void)
 	sendfd = socket(AF_INET, SOCK_DGRAM, 0);
 	ERR_CHECK(sendfd == -1, "socket");
 
-	setuid(uid);
+	//setuid(uid);
 	
 	serbind.sin_family = AF_INET;
-	serbind.sin_addr.s_addr = INADDR_ANY;
-	g_sport = getpid() & 0xffff;
+	g_sport = (getpid() & 0xffff) | 0x8000;
+    //printf("g_sport2 = %d\n", htons(g_sport));
 	serbind.sin_port = htons(g_sport);
 	if (bind(sendfd, (struct sockaddr *)(&serbind), sizeof(serbind)) == -1)
 		INFO("Bind failed.");
@@ -63,11 +62,13 @@ void 	init(void)
 		printf("usage.\n");
 		exit(EXIT_SUCCESS);
 	}
+    signal(SIGALRM, sig_alrm);
 	g_addrinfo = host_to_addrinfo(g_hostname, AF_INET, SOCK_DGRAM);
 	ERR_CHECK(g_addrinfo == NULL, "host_to_addrinfo");
 	if (getnameinfo(g_addrinfo->ai_addr, g_addrinfo->ai_addrlen, g_rhostname,\
 													NI_MAXHOST, NULL, 0, 0) != 0)
 		perror_("getnameinfo");
+    g_dport = DEFAULT_PORT_NUM;
 	g_inital_ttl = INITIAL_TTL;
 	g_max_ttl = MAX_TTL;
 	g_probes = DEFAULT_PROBE;
@@ -93,6 +94,8 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	struct udphdr 	*udp_hdr;
 
 	g_alarmed = false;
+    ret = 0;
+    alarm(2);
 	while (true)
 	{
 		if (g_alarmed)
@@ -108,34 +111,51 @@ int		wait_and_recv(int seq, struct timeval *tv)
 		ip_hdr_out = (struct ip *)recvbuf;
 		ip_out_len = ip_hdr_out->ip_hl << 2;
 
+        //printf("outer ip len: %d\n", ip_out_len);
 		if ((icmplen = b_read - ip_out_len) < ICMP_HDR_LEN)
 			continue ; 
 		if (icmplen < ICMP_HDR_LEN + sizeof(struct ip))
 			continue ;
+        //printf("icmplen: %d\n", icmplen);
 		icmp_hdr = (struct icmp *)(recvbuf + ip_out_len);
-		
 		if (icmp_hdr->icmp_type == ICMP_TIMXCEED ||icmp_hdr->icmp_type == ICMP_UNREACH) 
 		{
+            //printf("icmp_hdr->icmp_type == ICMP_TIMXCEED ?: %d\n", icmp_hdr->icmp_type == ICMP_TIMXCEED);
 			ip_hdr_in = (struct ip *)(recvbuf + ip_out_len + ICMP_HDR_LEN);
 			ip_in_len = ip_hdr_in->ip_hl << 2;
+            //printf("inner ip len: %d\n", ip_in_len);
 			if (icmplen < ICMP_HDR_LEN + ip_in_len + (UDP_HDR_LEN / 2))
 				continue ;
 
-			udp_hdr = (struct udphdr *)(recvbuf + ip_out_len + icmplen + ip_in_len);
+			udp_hdr = (struct udphdr *)(recvbuf + ip_out_len + ICMP_HDR_LEN + ip_in_len);
+            // printf("[udp_hdr->uh_sport = %d] \n", udp_hdr->uh_sport);
+            //  printf("[htons(g_sport) = %d] \n",  htons(g_sport));
+            // printf("[udp_hdr->uh_dport = %d] \n", udp_hdr->uh_dport);
+            // printf("g_dport: %d %d\n", g_dport, seq);
+            //  printf("[htons(g_dport + seq) = %d] \n",  htons(g_dport + seq));
+            // printf("[icmp_hdr->icmp_code = %d] \n", icmp_hdr->icmp_code);
+            // printf("ip_hdr_in->ip_p == IPPROTO_UDP ? %d\n", ip_hdr_in->ip_p == IPPROTO_UDP);
+           
+        //    printf("%d\n", ip_hdr_in->ip_p == IPPROTO_UDP);
+        //    printf("%d\n", udp_hdr->uh_sport == htons(g_sport));
+        //    printf("%d\n", udp_hdr->uh_dport == htons(g_dport + seq));
 			if (ip_hdr_in->ip_p == IPPROTO_UDP
 				&& udp_hdr->uh_sport == htons(g_sport)
 				&& udp_hdr->uh_dport == htons(g_dport + seq))
-				ret = (icmp_hdr->icmp_code);
+			{
+                ret = (icmp_hdr->icmp_code);
+                printf("run! %d\n", ret);
+            }
 		}
 		else 
 		{
 			//verbose
 			continue ;
 		}
-		alarm(0);
-		gettimeofday(tv, NULL);
-		return (ret);
 	}
+    alarm(0);
+    gettimeofday(tv, NULL);
+    return (ret);
 	return (UNREACHABLE);
 }
 
@@ -148,12 +168,16 @@ void 	readloop(void)
 	double					rtt;
 	u_int16_t				seq;
 	int						code;
+    int                     b_sent;
 	char					sendbuf[777];
 	char					hostname[NI_MAXHOST];
 
-	for (u_int8_t ttl = g_inital_ttl; ttl < g_max_ttl; ttl++)
+    
+    seq = 0;
+	sig_alrm(SIGALRM);
+    for (u_int8_t ttl = g_inital_ttl; ttl < g_max_ttl; ttl++)
 	{
-		ERR_CHECK(setsockopt(g_sendfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) == -1,\
+		ERR_CHECK(setsockopt(g_sendfd, IPPROTO_IP, IP_TTL, (int[]){(int)ttl}, sizeof(int)) == -1,\
 			"setsockopt");
 		bzero_(&serlast, sizeof(serlast));
 		printf("%2d ", ttl);
@@ -161,12 +185,13 @@ void 	readloop(void)
 		for (uint8_t probe = 0; probe < g_probes; probe++)
 		{
 			data = (struct s_content *)(sendbuf);
-			data->seq = seq++;
+			data->seq = ++seq;
 			data->ttl = ttl;
 			gettimeofday(&data->recv_time, NULL);
-			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = g_dport + seq;
-			sendto(g_sendfd, sendbuf, sizeof(sendbuf), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
-			code = wait_and_recv(seq, &recvtv);
+			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = htons(g_dport + seq);
+			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
+			printf("b_sent: %d\n", b_sent);
+            code = wait_and_recv(seq, &recvtv);
 			if (code == ALARMED)
 				printf (" *");
 			else 
@@ -186,11 +211,11 @@ void 	readloop(void)
 			if (code == ICMP_UNREACH_PORT)
 				break ;
 			else if (code != ICMP_TIMXCEED_INTRANS)
-				printf (" (ICMP %s)", code_tostring(code));
+				printf (" (ICMP %d)", code);
 		}
 		fflush(stdout);
+        printf("\n");
 	}
-	printf("\n");
 }
 
 int		main(int ac, char **av)

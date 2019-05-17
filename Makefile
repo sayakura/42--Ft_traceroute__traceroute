@@ -25,5 +25,8 @@ fclean: clean
 	@rm -f $(NAME)
 
 re: clean all
+   
+test:
+     gcc src/*.c -I src
 
 .PHONY: all, $(NAME), clean, fclean, re
