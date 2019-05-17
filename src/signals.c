@@ -11,13 +11,3 @@
 /* ************************************************************************** */
 
 #include "traceroute.h"
-
-bool                 g_SOCK_TIMEOUT;
-
-void    sig_alrm(int signo)
-{
-    (void)signo;
-    printf("kicks in!\n");
-    g_SOCK_TIMEOUT = true;    
-    return ;
-}

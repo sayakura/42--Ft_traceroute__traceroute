@@ -34,10 +34,10 @@ void 	creat_sock(void)
 	int					sendfd;
 	int 				recvfd;
 	struct sockaddr_in	serbind; 
-    struct timeval      SOCK_TIMEOUT;
+    struct timeval      timeout;
 
-    SOCK_TIMEOUT.tv_sec = 3;
-    SOCK_TIMEOUT.tv_usec = 0;
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
 	if ((uid = getuid()) != 0)
 		FATAL("Need run premission to create raw socket.");
 
@@ -46,8 +46,8 @@ void 	creat_sock(void)
 	sendfd = socket(AF_INET, SOCK_DGRAM, 0);
 	ERR_CHECK(sendfd == -1, "socket");
 
-    if (setsockopt (recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&SOCK_TIMEOUT,
-                sizeof(SOCK_TIMEOUT)) < 0)
+    if (setsockopt (recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
         FATAL("setsockopt failed\n");
 	//setuid(uid);
 	
@@ -68,7 +68,7 @@ void 	init(void)
 		printf("usage.\n");
 		exit(EXIT_SUCCESS);
 	}
-    signal(SIGALRM, sig_alrm);
+    //signal(SIGALRM, sig_alrm);
 	g_addrinfo = host_to_addrinfo(g_hostname, AF_INET, SOCK_DGRAM);
 	ERR_CHECK(g_addrinfo == NULL, "host_to_addrinfo");
 	if (getnameinfo(g_addrinfo->ai_addr, g_addrinfo->ai_addrlen, g_rhostname,\
@@ -181,7 +181,6 @@ void 	readloop(void)
 
     
     seq = 0;
-	sig_alrm(SIGALRM);
     for (u_int8_t ttl = g_inital_ttl; ttl < g_max_ttl; ttl++)
 	{
 		ERR_CHECK(setsockopt(g_sendfd, IPPROTO_IP, IP_TTL, (int[]){(int)ttl}, sizeof(int)) == -1,\
@@ -197,7 +196,7 @@ void 	readloop(void)
 			gettimeofday(&data->recv_time, NULL);
 			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = htons(g_dport + seq);
 			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
-			printf("b_sent: %d\n", b_sent);
+			//printf("b_sent: %d\n", b_sent);
             code = wait_and_recv(seq, &recvtv);
 			if (code == SOCK_TIMEOUT)
 				printf (" *");
@@ -206,7 +205,7 @@ void 	readloop(void)
 				if (serlast.sin_addr.s_addr != ((struct sockaddr_in *)&g_serrecv)->sin_addr.s_addr)
 				{
 					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname, NI_MAXHOST, NULL, 0, 0) == 0)
-						printf("%s (%s)", hostname, inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
+						printf(" %s (%s)", hostname, inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 					else
 						printf(" %s", inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 				}
@@ -215,13 +214,13 @@ void 	readloop(void)
 				rtt = recvtv.tv_sec * 1000.0 + recvtv.tv_usec / 1000.0;
 				printf(" %.3f ms", rtt);
 			}
-			if (code == ICMP_UNREACH_PORT)
-				break ;
-			else if (code != ICMP_TIMXCEED_INTRANS && code != SOCK_TIMEOUT)
+            if (code != ICMP_TIMXCEED_INTRANS && code != SOCK_TIMEOUT && code != ICMP_UNREACH_PORT)
 				printf (" (ICMP %d)", code);
+            fflush(stdout);
 		}
-		fflush(stdout);
         printf("\n");
+        if (code == ICMP_UNREACH_PORT)
+				break ;
 	}
 }
 
