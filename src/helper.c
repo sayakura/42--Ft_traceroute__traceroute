@@ -39,7 +39,7 @@ struct addrinfo		*host_to_addrinfo(char *host, int family, int socktype)
 }
 
 
-char	*c_to_s(int code)
+char	*code_tostring(int code)
 {
 	static char *code_lookup[] = {
 		"Net is unreachable",
