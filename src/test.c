@@ -3,6 +3,8 @@
 
 char				*g_hostname;
 int					g_sendfd;
+ uint16_t 			g_dport;
+ uint16_t			g_sport;
 uint8_t 			g_inital_ttl;
 uint8_t 			g_max_ttl;
 uint8_t 			g_probes;
@@ -10,6 +12,7 @@ uint8_t 			g_waittime;
 uint16_t			g_port;
 char				g_rhostname[NI_MAXHOST];
 struct addrinfo		*g_addrinfo;
+struct sockaddr		g_serrecv;
 int                 g_recvfd;
 
 void			readopt(int ac, char **av);
