@@ -94,7 +94,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	{
 		if (g_alarmed)
 			return (ALARMED);// expired
-		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (int[]){sizeof(g_serrecv)});
+		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (unsigned []){sizeof(g_serrecv)});
 		if (b_read < 0)
 		{
 			if (errno == EINTR)
@@ -173,7 +173,7 @@ void 	readloop(void)
 					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname, NI_MAXHOST, NULL, 0, 0) == 0)
 						printf("%s (%s)", hostname, inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 					else
-						printf(" %s", ((struct sockaddr_in *)&g_serrecv)->sin_addr);
+						printf(" %s", inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 				}
 				memcpy(&serlast, &g_serrecv, sizeof(struct sockaddr_in));
 			}
@@ -183,7 +183,7 @@ void 	readloop(void)
 			if (code == ICMP_UNREACH_PORT)
 				break ;
 			else if (code != ICMP_TIMXCEED_INTRANS)
-				printf (" (ICMP %s)", code);
+				printf (" (ICMP %s)", code_tostring(code));
 		}
 		fflush(stdout);
 	}

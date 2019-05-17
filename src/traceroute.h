@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/17 09:04:13 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/17 09:08:16 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
+#include <arpa/inet.h> // inet_ntoa
 #include <netinet/udp.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -92,5 +93,7 @@ extern bool                 g_alarmed;
 extern uint16_t				g_sport;
 extern uint16_t 			g_dport;
 extern struct sockaddr		g_serrecv;
+
 struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
+char						*code_tostring(int code);
 #endif

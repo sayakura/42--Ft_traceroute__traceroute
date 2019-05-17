@@ -37,3 +37,30 @@ struct addrinfo		*host_to_addrinfo(char *host, int family, int socktype)
         ? NULL
         : res;
 }
+
+
+char	*c_to_s(int code)
+{
+	static char *code_lookup[] = {
+		"Net is unreachable",
+		"Host is unreachable",
+		"Protocol is unreachable",
+		"Port is unreachable",
+		"Fragmentation is needed and Don't Fragment was set",
+		"Source route failed",
+		"Destination network is unknown",
+		"Destination host is unknown",
+		"Source host is isolated",
+		"Communication with destination network is administratively prohibited",
+		"Communication with destination host is administratively prohibited",
+		"Destination network is unreachable for type of service",
+		"Destination host is unreachable for type of service",
+		"Communication is administratively prohibited",
+		"Host precedence violation",
+		"Precedence cutoff is in effect"
+	};
+
+	if (code < 0 || code > 15)
+		return ("unknown code");
+	return (code_lookup[code]);
+}
