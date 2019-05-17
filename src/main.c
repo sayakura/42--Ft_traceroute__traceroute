@@ -34,7 +34,10 @@ void 	creat_sock(void)
 	int					sendfd;
 	int 				recvfd;
 	struct sockaddr_in	serbind; 
+    struct timeval      timeout;
 
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
 	if ((uid = getuid()) != 0)
 		FATAL("Need run premission to create raw socket.");
 
@@ -43,6 +46,9 @@ void 	creat_sock(void)
 	sendfd = socket(AF_INET, SOCK_DGRAM, 0);
 	ERR_CHECK(sendfd == -1, "socket");
 
+    if (setsockopt (recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
+        FATAL("setsockopt failed\n");
 	//setuid(uid);
 	
 	serbind.sin_family = AF_INET;
@@ -93,18 +99,19 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	struct icmp 	*icmp_hdr;
 	struct udphdr 	*udp_hdr;
 
-	g_alarmed = false;
+	// g_alarmed = false;
     ret = 0;
-    alarm(2);
+    // alarm(2);
 	while (true)
 	{
-		if (g_alarmed)
-			return (ALARMED);// expired
-		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (unsigned []){sizeof(g_serrecv)});
+		// if (g_alarmed)
+		// 	return (ALARMED);// expired
+		//printf("run! alarm? %s\n", g_alarmed ? "true" : "false");
+        b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (unsigned []){sizeof(g_serrecv)});
 		if (b_read < 0)
 		{
-			if (errno == EINTR)
-				continue ;
+			if (errno == EAGAIN)
+                return (ALARMED);
 			else
 				perror_("recvfrom");
 		}
@@ -144,7 +151,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 				&& udp_hdr->uh_dport == htons(g_dport + seq))
 			{
                 ret = (icmp_hdr->icmp_code);
-                printf("run! %d\n", ret);
+                break ;
             }
 		}
 		else 
@@ -153,7 +160,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 			continue ;
 		}
 	}
-    alarm(0);
+    //alarm(0);
     gettimeofday(tv, NULL);
     return (ret);
 	return (UNREACHABLE);
