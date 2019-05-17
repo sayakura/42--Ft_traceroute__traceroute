@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/16 10:19:44 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/17 09:04:13 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@
 #define DEFAULT_PROBE 3
 #define DEFAULT_WAIT 5
 #define DEFAULT_PORT_NUM 33434
+#define UNREACHABLE 2147483647
 #define ICMP_HDR_LEN 8
 #define UDP_HDR_LEN 8
 #define ALARMED -2

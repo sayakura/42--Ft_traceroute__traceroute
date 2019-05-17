@@ -94,7 +94,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	{
 		if (g_alarmed)
 			return (ALARMED);// expired
-		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, sizeof(g_serrecv));
+		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (int[]){sizeof(g_serrecv)});
 		if (b_read < 0)
 		{
 			if (errno == EINTR)
@@ -122,7 +122,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 			if (ip_hdr_in->ip_p == IPPROTO_UDP
 				&& udp_hdr->uh_sport == htons(g_sport)
 				&& udp_hdr->uh_dport == htons(g_dport + seq))
-				return (icmp_hdr->icmp_code);
+				ret = (icmp_hdr->icmp_code);
 		}
 		else 
 		{
@@ -133,6 +133,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 		gettimeofday(tv, NULL);
 		return (ret);
 	}
+	return (UNREACHABLE);
 }
 
 
@@ -170,7 +171,7 @@ void 	readloop(void)
 				if (serlast.sin_addr.s_addr != ((struct sockaddr_in *)&g_serrecv)->sin_addr.s_addr)
 				{
 					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname, NI_MAXHOST, NULL, 0, 0) == 0)
-						printf("%s (%s)", hostname, ((struct sockaddr_in *)&g_serrecv)->sin_addr);
+						printf("%s (%s)", hostname, inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 					else
 						printf(" %s", ((struct sockaddr_in *)&g_serrecv)->sin_addr);
 				}
