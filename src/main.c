@@ -10,7 +10,7 @@ uint8_t 			g_max_ttl;
 uint8_t 			g_probes;
 uint8_t 			g_waittime;
 uint16_t			g_port;
-bool                g_alarmed;
+bool                g_SOCK_TIMEOUT;
 char				g_rhostname[NI_MAXHOST];
 struct addrinfo		*g_addrinfo;
 struct sockaddr		g_serrecv;
@@ -34,10 +34,10 @@ void 	creat_sock(void)
 	int					sendfd;
 	int 				recvfd;
 	struct sockaddr_in	serbind; 
-    struct timeval      timeout;
+    struct timeval      SOCK_TIMEOUT;
 
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
+    SOCK_TIMEOUT.tv_sec = 3;
+    SOCK_TIMEOUT.tv_usec = 0;
 	if ((uid = getuid()) != 0)
 		FATAL("Need run premission to create raw socket.");
 
@@ -46,8 +46,8 @@ void 	creat_sock(void)
 	sendfd = socket(AF_INET, SOCK_DGRAM, 0);
 	ERR_CHECK(sendfd == -1, "socket");
 
-    if (setsockopt (recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-                sizeof(timeout)) < 0)
+    if (setsockopt (recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&SOCK_TIMEOUT,
+                sizeof(SOCK_TIMEOUT)) < 0)
         FATAL("setsockopt failed\n");
 	//setuid(uid);
 	
@@ -99,19 +99,19 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	struct icmp 	*icmp_hdr;
 	struct udphdr 	*udp_hdr;
 
-	// g_alarmed = false;
+	// g_SOCK_TIMEOUT = false;
     ret = 0;
     // alarm(2);
 	while (true)
 	{
-		// if (g_alarmed)
-		// 	return (ALARMED);// expired
-		//printf("run! alarm? %s\n", g_alarmed ? "true" : "false");
+		// if (g_SOCK_TIMEOUT)
+		// 	return (SOCK_TIMEOUT);// expired
+		//printf("run! alarm? %s\n", g_SOCK_TIMEOUT ? "true" : "false");
         b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (unsigned []){sizeof(g_serrecv)});
 		if (b_read < 0)
 		{
 			if (errno == EAGAIN)
-                return (ALARMED);
+                return (SOCK_TIMEOUT);
 			else
 				perror_("recvfrom");
 		}
@@ -199,7 +199,7 @@ void 	readloop(void)
 			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
 			printf("b_sent: %d\n", b_sent);
             code = wait_and_recv(seq, &recvtv);
-			if (code == ALARMED)
+			if (code == SOCK_TIMEOUT)
 				printf (" *");
 			else 
 			{
@@ -211,13 +211,13 @@ void 	readloop(void)
 						printf(" %s", inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 				}
 				memcpy(&serlast, &g_serrecv, sizeof(struct sockaddr_in));
+				tv_sub(&recvtv , &data->recv_time);
+				rtt = recvtv.tv_sec * 1000.0 + recvtv.tv_usec / 1000.0;
+				printf(" %.3f ms", rtt);
 			}
-			tv_sub(&recvtv , &data->recv_time);
-			rtt = recvtv.tv_sec * 1000.0 + recvtv.tv_usec / 1000.0;
-			printf(" %.3f ms", rtt);
 			if (code == ICMP_UNREACH_PORT)
 				break ;
-			else if (code != ICMP_TIMXCEED_INTRANS)
+			else if (code != ICMP_TIMXCEED_INTRANS && code != SOCK_TIMEOUT)
 				printf (" (ICMP %d)", code);
 		}
 		fflush(stdout);

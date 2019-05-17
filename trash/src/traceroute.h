@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/03 20:51:22 by qpeng             #+#    #+#             */
-/*   Updated: 2019/04/27 20:50:00 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/17 11:52:39 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@
 # define ERR_PROMPT(cond, msg)({if(cond)PRINT_ERROR(msg);})
 # define ERR_QUIT(f) ({perror(f); exit(EXIT_FAILURE);})
 # define ERR_CHECK(cond, f) ({if(cond)ERR_QUIT(f);})
-# define RECV_TIMEOUT -1
+# define RECV_SOCK_TIMEOUT -1
 # define RECV_SUCCESS 1
 # define RECV_TTLEXCEED 2
 # define RECV_REACHED 3
@@ -98,7 +98,7 @@ typedef struct  s_config
 t_config    g_config;
 
 t_ping      *g_ping;
-// bool        g_timeout;
+// bool        g_SOCK_TIMEOUT;
 
 t_proto     proto_v4 = {
     IPPROTO_IP,

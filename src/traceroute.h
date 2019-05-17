@@ -6,7 +6,7 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/13 01:10:34 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/17 09:08:16 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/17 11:52:39 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@
 #define UNREACHABLE 2147483647
 #define ICMP_HDR_LEN 8
 #define UDP_HDR_LEN 8
-#define ALARMED -2
+#define SOCK_TIMEOUT -2
 
 enum    e_flags
 {
@@ -90,7 +90,7 @@ extern char                 g_rhostname[NI_MAXHOST];
 extern struct addrinfo      *g_addrinfo;
 extern int                  g_sendfd;
 extern int                  g_recvfd;
-extern bool                 g_alarmed;
+extern bool                 g_SOCK_TIMEOUT;
 extern uint16_t				g_sport;
 extern uint16_t 			g_dport;
 extern struct sockaddr		g_serrecv;

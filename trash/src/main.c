@@ -6,17 +6,17 @@
 /*   By: qpeng <qpeng@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/17 14:51:58 by qpeng             #+#    #+#             */
-/*   Updated: 2019/05/13 00:50:26 by qpeng            ###   ########.fr       */
+/*   Updated: 2019/05/17 11:52:39 by qpeng            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "traceroute.h"
 
-bool	g_timeout;
+bool	g_SOCK_TIMEOUT;
 
 void	sig_alarm(int sig)
 {
-	g_timeout = true;		
+	g_SOCK_TIMEOUT = true;		
 	return ;
 }
 
@@ -108,7 +108,7 @@ int			readmsg_v4(struct timeval *tvrecv)
 			if (errno == EINTR)
 				continue ;
 			else if (errno == ETIMEDOUT)
-				return (RECV_TIMEOUT);
+				return (RECV_SOCK_TIMEOUT);
 			else
 			{
 				printf("%d\n", errno);
@@ -212,14 +212,14 @@ void				ping_init(char *host)
 
 int				sock_init()
 {
-    struct timeval  timeout;
+    struct timeval  SOCK_TIMEOUT;
 
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
+    SOCK_TIMEOUT.tv_sec = 3;
+    SOCK_TIMEOUT.tv_usec = 0;
     g_ping->sockfd = socket(g_ping->sserv->sa_family, SOCK_RAW, g_ping->proto->icmp_proto);
 	ERR_CHECK(g_ping->sockfd == -1, "socket");
     ERR_CHECK(setsockopt(g_ping->sockfd, SOL_SOCKET, SO_RCVTIMEO,\
-		(void *)&timeout, sizeof(timeout)) == -1, "setsockopt");
+		(void *)&SOCK_TIMEOUT, sizeof(SOCK_TIMEOUT)) == -1, "setsockopt");
 }
 
 void                readloop(void)
@@ -242,7 +242,7 @@ void                readloop(void)
 		{
 			g_ping->send();
 			ret = g_ping->recv(&tvrecv);
-			if (ret == RECV_TIMEOUT)
+			if (ret == RECV_SOCK_TIMEOUT)
 				printf(" *");
 			else if(ret == RECV_TTLEXCEED ||
 					ret == RECV_REACHED)
