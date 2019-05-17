@@ -55,6 +55,11 @@ void 	creat_sock(void)
 
 void 	init(void)
 {
+	if (!g_hostname)
+	{
+		printf("usage.\n");
+		exit(EXIT_SUCCESS);
+	}
 	g_addrinfo = host_to_addrinfo(g_hostname, AF_INET, SOCK_DGRAM);
 	ERR_CHECK(g_addrinfo == NULL, "host_to_addrinfo");
 	if (getnameinfo(g_addrinfo->ai_addr, g_addrinfo->ai_addrlen, g_rhostname,\
