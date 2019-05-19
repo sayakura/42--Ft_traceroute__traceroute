@@ -12,7 +12,7 @@
 
 NAME = traceroute
 FLAGS = -Wall -Werror -Wextra -c 
-FILES = *.c
+FILES = main.c readopt.c helper.c
 SRCS = $(addprefix src/, $(FILES))
 OBJ = $(FILES:.c=.o)
 all:
@@ -25,8 +25,5 @@ fclean: clean
 	@rm -f $(NAME)
 
 re: clean all
-   
-test:
-     gcc src/*.c -I src
 
 .PHONY: all, $(NAME), clean, fclean, re

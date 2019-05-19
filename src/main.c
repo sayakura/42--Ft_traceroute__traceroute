@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "traceroute.h"
 
+bool                g_loss;
 char				*g_hostname;
 int					g_sendfd;
 uint16_t 			g_dport;
@@ -13,8 +14,6 @@ struct addrinfo		*g_addrinfo;
 struct sockaddr		g_serrecv;
 int                 g_recvfd;
 
-void			readopt(int ac, char **av);
-
 void 	clean_up(void)
 {
     if (g_recvfd >=0 )
@@ -25,23 +24,13 @@ void 	clean_up(void)
 	    freeaddrinfo(g_addrinfo);
 }
 
-
-void	tv_sub(struct timeval *out, struct timeval *in)
-{
-	if ((out->tv_usec -= in->tv_usec) < 0)
-	{
-		--out->tv_sec;
-		out->tv_usec += 1000000;
-	}
-	out->tv_sec -= in->tv_sec;
-}
-
 void 	creat_sock(void)
 {
 	uid_t				uid;
 	struct sockaddr_in	serbind; 
     struct timeval      timeout;
 
+    bzero_(&serbind, sizeof(serbind));
 	if ((uid = getuid()) != 0)
 		FATAL("Need run premission to create raw socket.");
 	if ((g_recvfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1
@@ -51,7 +40,7 @@ void 	creat_sock(void)
         ERR_QUIT("socket");
     }
 
-    timeout.tv_sec = g_waittime;
+    timeout.tv_sec  = g_waittime;
     timeout.tv_usec = 0;
     if (setsockopt(g_recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0)
@@ -60,9 +49,9 @@ void 	creat_sock(void)
         ERR_QUIT("setsockopt");
     }
 
-	serbind.sin_family = AF_INET;
-	g_sport = (getpid() & 0xffff) | 0x8000;
-	serbind.sin_port = htons(g_sport);
+	serbind.sin_family  = AF_INET;
+	g_sport             = (getpid() & 0xffff) | 0x8000;
+	serbind.sin_port    = htons(g_sport);
 	if (bind(g_sendfd, (struct sockaddr *)(&serbind), sizeof(serbind)) == -1)
 	{
         clean_up();
@@ -73,12 +62,13 @@ void 	creat_sock(void)
 
 void 	init(void)
 {
-    g_dport = DEFAULT_PORT_NUM;
-	g_inital_ttl = INITIAL_TTL;
-	g_max_ttl = MAX_TTL;
-	g_probes = DEFAULT_PROBE;
-	g_waittime = DEFAULT_WAIT;
-    g_recvfd = g_sendfd = -1;
+    g_dport         = DEFAULT_PORT_NUM;
+	g_inital_ttl    = INITIAL_TTL;
+	g_max_ttl       = MAX_TTL;
+	g_probes        = DEFAULT_PROBE;
+	g_waittime      = DEFAULT_WAIT;
+    g_recvfd        = g_sendfd = -1;
+    g_loss          = false;
 }
 
 int		wait_and_recv(int seq, struct timeval *tv)
@@ -128,16 +118,10 @@ int		wait_and_recv(int seq, struct timeval *tv)
                 break ;
             }
 		}
-		else 
-		{
-			continue ;
-		}
 	}
     gettimeofday(tv, NULL);
     return (ret);
-	return (UNREACHABLE);
 }
-
 
 void 	traceroute(void)
 {
@@ -145,9 +129,10 @@ void 	traceroute(void)
 	struct s_content		*data;
 	struct timeval			recvtv;
 	double					rtt;
-	u_int16_t				seq;
+	uint16_t				seq;
 	int						code;
     int                     b_sent;
+    uint8_t                 pack_lost;
 	char					sendbuf[777];
 	char					hostname[NI_MAXHOST];
     bool                    arrived;
@@ -160,6 +145,7 @@ void 	traceroute(void)
     
     seq = 0;
     arrived = false;
+    pack_lost = 0;
     (void)b_sent;
     for (u_int8_t ttl = g_inital_ttl; ttl <= g_max_ttl; ttl++)
 	{
@@ -168,17 +154,23 @@ void 	traceroute(void)
 		bzero_(&serlast, sizeof(serlast));
 		printf("%2d ", ttl);
 		fflush(stdout);
+        pack_lost ^= pack_lost;
 		for (uint8_t probe = 0; probe < g_probes; probe++)
 		{
-			data = (struct s_content *)(sendbuf);
-			data->seq = ++seq;
-			data->ttl = ttl;
+			data        = (struct s_content *)(sendbuf);
+			data->seq   = ++seq;
+			data->ttl   = ttl;
 			gettimeofday(&data->recv_time, NULL);
+
 			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = htons(g_dport + seq);
 			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
+
             code = wait_and_recv(seq, &recvtv);
 			if (code == SOCK_TIMEOUT)
-				printf (" *");
+			{
+                pack_lost++;
+                printf (" *");
+            }
 			else 
 			{
 				if (serlast.sin_addr.s_addr != ((struct sockaddr_in *)&g_serrecv)->sin_addr.s_addr)
@@ -197,11 +189,14 @@ void 	traceroute(void)
                 arrived = true;
             else if (code != ICMP_TIMXCEED_INTRANS && code != SOCK_TIMEOUT)
 				printf (" (ICMP %d)", code);
+
             fflush(stdout);
 		}
+        if (g_loss)
+            printf(" (%.1f%% loss)", ((float)pack_lost / g_max_ttl * 100.0) * 10);
         printf("\n");
         if (arrived)
-				break ;
+		    break ;
 	}
 }
 

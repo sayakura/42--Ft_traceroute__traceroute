@@ -90,7 +90,10 @@ extern int                  g_recvfd;
 extern uint16_t				g_sport;
 extern uint16_t 			g_dport;
 extern struct sockaddr		g_serrecv;
+extern bool                 g_loss;
 
+void			            readopt(int ac, char **av);
+void	                    tv_sub(struct timeval *out, struct timeval *in);
 struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
 char						*code_tostring(int code);
 void                        sig_alrm(int signo);
