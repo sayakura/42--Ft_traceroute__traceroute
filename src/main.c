@@ -3,12 +3,11 @@
 
 char				*g_hostname;
 int					g_sendfd;
- uint16_t 			g_dport;
- uint16_t			g_sport;
+uint16_t 			g_dport;
+uint16_t			g_sport;
 uint8_t 			g_inital_ttl;
 uint8_t 			g_max_ttl;
 uint8_t 			g_probes;
-uint16_t			g_port;
 uint32_t 			g_waittime;
 struct addrinfo		*g_addrinfo;
 struct sockaddr		g_serrecv;
@@ -54,7 +53,7 @@ void 	creat_sock(void)
 
     timeout.tv_sec = g_waittime;
     timeout.tv_usec = 0;
-    if (setsockopt (g_recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+    if (setsockopt(g_recvfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0)
     {
         clean_up();
@@ -65,24 +64,20 @@ void 	creat_sock(void)
 	g_sport = (getpid() & 0xffff) | 0x8000;
 	serbind.sin_port = htons(g_sport);
 	if (bind(g_sendfd, (struct sockaddr *)(&serbind), sizeof(serbind)) == -1)
-		INFO("Bind failed.");
+	{
+        clean_up();
+        INFO("Bind failed.");
+        ERR_QUIT("bind");
+    }
 }
 
 void 	init(void)
 {
-	if (!g_hostname)
-	{
-		printf("usage.\n");
-		exit(EXIT_SUCCESS);
-	}
-	g_addrinfo = host_to_addrinfo(g_hostname, AF_INET, SOCK_DGRAM);
-	ERR_CHECK(g_addrinfo == NULL, "host_to_addrinfo");
     g_dport = DEFAULT_PORT_NUM;
 	g_inital_ttl = INITIAL_TTL;
 	g_max_ttl = MAX_TTL;
 	g_probes = DEFAULT_PROBE;
 	g_waittime = DEFAULT_WAIT;
-	g_port = DEFAULT_PORT_NUM;
     g_recvfd = g_sendfd = -1;
 }
 
@@ -114,7 +109,7 @@ int		wait_and_recv(int seq, struct timeval *tv)
 			continue ; 
 		if (icmplen < ICMP_HDR_LEN + sizeof(struct ip))
 			continue ;
-        //printf("icmplen: %d\n", icmplen);
+
 		icmp_hdr = (struct icmp *)(recvbuf + ip_out_len);
 		if (icmp_hdr->icmp_type == ICMP_TIMXCEED ||icmp_hdr->icmp_type == ICMP_UNREACH) 
 		{
@@ -165,6 +160,7 @@ void 	traceroute(void)
     
     seq = 0;
     arrived = false;
+    (void)b_sent;
     for (u_int8_t ttl = g_inital_ttl; ttl <= g_max_ttl; ttl++)
 	{
 		ERR_CHECK(setsockopt(g_sendfd, IPPROTO_IP, IP_TTL, (int[]){(int)ttl}, sizeof(int)) == -1,\
@@ -211,8 +207,8 @@ void 	traceroute(void)
 
 int		main(int ac, char **av)
 {
+    init();
 	readopt(ac, av);
-	init();
 	creat_sock();
 	traceroute();
 	clean_up();

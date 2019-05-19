@@ -39,7 +39,7 @@
 #define INITIAL_TTL 1
 #define MAX_TTL 30
 #define DEFAULT_PROBE 3
-#define DEFAULT_WAIT 5
+#define DEFAULT_WAIT 1
 #define DEFAULT_PORT_NUM 33434
 #define UNREACHABLE 2147483647
 #define ICMP_HDR_LEN 8
@@ -50,7 +50,7 @@ enum    e_flags
 {
 	F_FLAGS = 0b00000001,
 	M_FLAGS = 0b00000010,
-	P_FLAGS = 0b00000100,
+	Q_FLAGS = 0b00000100,
 	S_FLAGS = 0b00001000,
 	W_FLAGS = 0b00010000
 };
@@ -82,7 +82,6 @@ extern uint8_t              g_flags;
 extern uint8_t              g_inital_ttl;
 extern uint8_t              g_max_ttl;
 extern uint8_t              g_probes;
-extern uint16_t             g_port;
 extern uint32_t              g_waittime;
 extern char *               g_hostname;
 extern struct addrinfo      *g_addrinfo;
