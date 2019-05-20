@@ -8,6 +8,8 @@ sudo ./ft_tracerotue hostname
 
 sudo ./ft_tracerotue hostname -w 1 -q 4 -m 10 -S google.com
 ```
+![h_flag](images/a.png)
+![idk](images/c.png)
 
 ### Flags
 | flags | Description |
