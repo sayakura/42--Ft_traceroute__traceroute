@@ -10,7 +10,7 @@ uint8_t         g_max_ttl;
 void			readopt(int ac, char **av)
 {
     static char*    avaliable_flags[] = {
-        "-f", "-m", "-q", "-S", "-w"
+        "-f", "-m", "-q", "-S", "-w", "-h"
     };
     uint8_t         num_of_flags;
     uint32_t        val;
@@ -36,6 +36,10 @@ void			readopt(int ac, char **av)
                     val ^= val;
                     switch(poi)
                     {
+                        case 5:
+                            print_usage();
+		                    exit(EXIT_SUCCESS);
+                            break ;
                         case 0:
                         case 1:
                         case 2:
