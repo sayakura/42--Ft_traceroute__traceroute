@@ -19,7 +19,6 @@ OBJ = $(FILES:.c=.o)
 all:
 	@gcc -Iinclude $(FLAGS) $(SRCS)
 	@gcc $(OBJ) -o $(NAME)
-	@make clean
 
 clean:
 	@rm -rf *.o
