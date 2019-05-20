@@ -16,9 +16,9 @@ int                 g_recvfd;
 
 void 	clean_up(void)
 {
-    if (g_recvfd >=0 )
+    if (g_recvfd >=0)
 	    close(g_recvfd);
-    if (g_sendfd >=0 )
+    if (g_sendfd >=0)
 	    close(g_sendfd);
     if (g_addrinfo)
 	    freeaddrinfo(g_addrinfo);

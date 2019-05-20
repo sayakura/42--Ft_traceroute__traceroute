@@ -46,20 +46,18 @@
 #define UDP_HDR_LEN 8
 #define SOCK_TIMEOUT -2
 
-enum    e_flags
-{
-	F_FLAGS = 0b00000001,
-	M_FLAGS = 0b00000010,
-	Q_FLAGS = 0b00000100,
-	S_FLAGS = 0b00001000,
-	W_FLAGS = 0b00010000
-};
+// enum    e_flags
+// {
+// 	F_FLAGS = 0b00000001,
+// 	M_FLAGS = 0b00000010,
+// 	Q_FLAGS = 0b00000100,
+// 	S_FLAGS = 0b00001000,
+// 	W_FLAGS = 0b00010000
+// };
 
 #define HAS_FLAG(name) name##_FLAGS & g_flags
 
-# define FMT "usage\n"
 # define INFO(msg) printf(msg)
-# define PRINT_USAGE ({printf(FMT); exit(EXIT_SUCCESS);})
 # define FATAL(msg) ({fprintf(stderr, "%s\n", msg); exit(EXIT_FAILURE);})
 # define ERR_QUIT(f) ({perror_(f); exit(EXIT_FAILURE);})
 # define ERR_CHECK(cond, f) ({if(cond)ERR_QUIT(f);})
@@ -74,7 +72,7 @@ struct  s_content
 /**
  *  global variable for storing all the flags info.
  *  0 = not used
- *  |0|0|0|w|S|p|m|f|
+ *  |0|0|0|w|S|q|m|f|
  *   8 7 6 5 4 3 2 1
  */
 extern uint8_t              g_flags;
@@ -97,4 +95,5 @@ void	                    tv_sub(struct timeval *out, struct timeval *in);
 struct addrinfo		        *host_to_addrinfo(char *host, int family, int socktype);
 char						*code_tostring(int code);
 void                        sig_alrm(int signo);
+void                        print_usage(void);
 #endif

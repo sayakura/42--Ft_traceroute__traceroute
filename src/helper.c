@@ -50,3 +50,13 @@ char	*code_tostring(int code)
 		return ("unknown code");
 	return (code_lookup[code]);
 }
+
+void     print_usage(void)
+{
+    printf("Usage:\ntraceroute [ -f first_ttl ] [ -m max_ttl ] [ -S %% of lost packets ] [ -w wait time ] [ -q nprobes ] host\n");
+    printf("\t-f started from this hop, default 1\n");
+    printf("\t-m set the max hop limits, default 30, up to 255\n");
+    printf("\t-S print out a message indicating how many packets were lost\n");
+    printf("\t-w set the wait time between probes, default 3 seconds\n");
+    printf("\t-q set how many probes per hop, default 3\n");
+}

@@ -18,7 +18,7 @@ void			readopt(int ac, char **av)
 
     if (ac < 2)
     {
-        printf("usage!\n");
+        print_usage();
         exit(EXIT_SUCCESS);
     }
     val = 0;
@@ -41,7 +41,7 @@ void			readopt(int ac, char **av)
                         case 2:
                         case 4:
                             if (i < ac - 1)
-                                val = atoi(av[i + 1]);
+                                val = atoi_(av[i + 1]);
                             host_poi = ++i + 1;
                             if (poi == 0)
                             {
@@ -53,8 +53,8 @@ void			readopt(int ac, char **av)
                             {
                                 if (val > 255)
                                     FATAL("max hops cannot be more than 255");
-                                else if (val < 0)
-                                    FATAL("max hops must be a non-negative number");
+                                else if (val == 0)
+                                    FATAL("max hops must be a non zero number");
                                 g_max_ttl = val;
                             }
                             else if (poi == 2)
@@ -81,12 +81,12 @@ void			readopt(int ac, char **av)
             }
         }
     }
-    if (host_poi >= ac)
+    if ((int)host_poi >= ac)
         FATAL("Specify \"host\" missing argument.");
     g_hostname = av[ac - 1][0] == '-' ? NULL : av[ac - 1];
     if (!g_hostname)
 	{
-		printf("usage.\n");
+        print_usage();
 		exit(EXIT_SUCCESS);
 	}
 	g_addrinfo = host_to_addrinfo(g_hostname, AF_INET, SOCK_DGRAM);

@@ -22,5 +22,6 @@ void				perror_(const char *s);
 int					strcmp_(const char *rdi, const char *rsi);
 void				bzero_(void *rsi, size_t rcx);
 char				*strcpy_(char *rdi, const char *rsi);
+int                 atoi_(const char *str);
 
 #endif

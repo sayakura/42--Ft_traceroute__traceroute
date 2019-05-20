@@ -10,15 +10,17 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME = traceroute
+NAME = ft_traceroute
 FLAGS = -Wall -Werror -Wextra -c 
-FILES = main.c readopt.c helper.c
+FILES = main.c readopt.c helper.c libft.c
 SRCS = $(addprefix src/, $(FILES))
 OBJ = $(FILES:.c=.o)
+
 all:
 	@gcc -Iinclude $(FLAGS) $(SRCS)
 	@gcc $(OBJ) -o $(NAME)
 	@make clean
+
 clean:
 	@rm -rf *.o
 fclean: clean

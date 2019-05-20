@@ -50,3 +50,51 @@ char		*strcpy_(char *rdi, const char *rsi)
 		;
 	return (rax);
 }
+
+int		isdigit_(char c)
+{
+	return (c >= '0' && c <= '9');
+}
+
+int 	isspace_(char c)
+{
+	return (c == ' ' ||
+			c == '\t' ||
+			c == '\n' ||
+			c == '\f' ||
+			c == '\v' ||
+			c == '\r' ||
+			c == '\t');
+}
+
+int     atoi_(const char *str)
+{
+	unsigned long long	result;
+	unsigned int		index;
+	char				sign;
+
+	index = 0;
+	result = 0;
+	sign = 1;
+	while (isspace_(str[index]))
+		index++;
+	if (str[index] == '+' || str[index] == '-')
+	{
+		if (str[index] == '-')
+			sign = 0;
+		index++;
+	}
+	while (isdigit_(str[index]))
+	{
+		result = result * 10 + (str[index] - '0');
+		if (result > 9223372036854775807)
+		{
+            if (sign)
+				return (-1);
+			else
+				return (0);
+        }
+		index++;
+	}
+	return (int)((sign) ? (result) : (-result));
+}
