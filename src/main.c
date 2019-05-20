@@ -1,18 +1,18 @@
 #include <stdio.h>
 #include "traceroute.h"
 
-bool                g_loss;
+bool				g_loss;
 char				*g_hostname;
 int					g_sendfd;
-uint16_t 			g_dport;
+uint16_t			g_dport;
 uint16_t			g_sport;
-uint8_t 			g_inital_ttl;
-uint8_t 			g_max_ttl;
-uint8_t 			g_probes;
-uint32_t 			g_waittime;
+uint8_t				g_inital_ttl;
+uint8_t				g_max_ttl;
+uint8_t				g_probes;
+uint32_t			g_waittime;
 struct addrinfo		*g_addrinfo;
 struct sockaddr		g_serrecv;
-int                 g_recvfd;
+int					g_recvfd;
 
 void 	clean_up(void)
 {
@@ -77,14 +77,15 @@ int		wait_and_recv(int seq, struct timeval *tv)
 	ssize_t			b_read;
 	uint16_t		ip_out_len, ip_in_len, icmplen;
 	char			recvbuf[777];
-	struct ip 		*ip_hdr_out, *ip_hdr_in;
-	struct icmp 	*icmp_hdr;
-	struct udphdr 	*udp_hdr;
+	struct ip		*ip_hdr_out, *ip_hdr_in;
+	struct icmp		*icmp_hdr;
+	struct udphdr	*udp_hdr;
 
 	ret = 0;
 	while (true)
 	{
-		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0, &g_serrecv, (unsigned []){sizeof(g_serrecv)});
+		b_read = recvfrom(g_recvfd, recvbuf, sizeof(recvbuf), 0,\
+					&g_serrecv, (unsigned []){sizeof(g_serrecv)});
 		if (b_read < 0)
 		{
 			if (errno == EAGAIN)
@@ -131,11 +132,11 @@ void 	traceroute(void)
 	double					rtt;
 	uint16_t				seq;
 	int						code;
-	int                     b_sent;
-	uint8_t                 pack_lost;
+	int						b_sent;
+	uint8_t					pack_lost;
 	char					sendbuf[777];
 	char					hostname[NI_MAXHOST];
-	bool                    arrived;
+	bool					arrived;
 	
 	printf("traceroute to %s (%s), %d hops max, %ld byte packets\n",
 							g_hostname, 
@@ -163,7 +164,8 @@ void 	traceroute(void)
 			gettimeofday(&data->recv_time, NULL);
 
 			((struct sockaddr_in *)g_addrinfo->ai_addr)->sin_port = htons(g_dport + seq);
-			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0, g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
+			b_sent = sendto(g_sendfd, sendbuf, sizeof(struct s_content), 0,\
+											g_addrinfo->ai_addr, g_addrinfo->ai_addrlen);
 
 			code = wait_and_recv(seq, &recvtv);
 			if (code == SOCK_TIMEOUT)
@@ -175,7 +177,8 @@ void 	traceroute(void)
 			{
 				if (serlast.sin_addr.s_addr != ((struct sockaddr_in *)&g_serrecv)->sin_addr.s_addr)
 				{
-					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname, NI_MAXHOST, NULL, 0, 0) == 0)
+					if (getnameinfo(&g_serrecv, sizeof(struct sockaddr), hostname,\
+																			NI_MAXHOST, NULL, 0, 0) == 0)
 						printf(" %s (%s)", hostname, inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
 					else
 						printf(" %s", inet_ntoa(((struct sockaddr_in *)&g_serrecv)->sin_addr));
